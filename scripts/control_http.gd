@@ -112,6 +112,7 @@ func _handle_request(peer: StreamPeerTCP, request_text: String) -> bool:
 					"POST /action": "Submit {frame_id, kind: drive|hold, throttle, steering, brake}.",
 					"GET /stream": "Semantic SSE events including frame_ready and frame_observation.",
 					"GET /camera": "Current participant camera as 640x360 WebP; unavailable in headless mode.",
+					"GET /camera/contact-strip": "Latest frame consequence as a 960x180 three-sample WebP.",
 					"GET /camera/inspection": "Current participant camera as higher-detail 960x540 WebP.",
 				},
 			})
@@ -136,6 +137,15 @@ func _handle_request(peer: StreamPeerTCP, request_text: String) -> bool:
 				var webp: PackedByteArray = participant.capture_webp(tier)
 				if webp.is_empty():
 					_send_json(peer, 503, {"ok": false, "message": "Camera capture is unavailable in this renderer."})
+				else:
+					_send_bytes(peer, 200, "image/webp", webp)
+		"/camera/contact-strip":
+			if method != "GET":
+				_send_json(peer, 405, {"ok": false, "message": "Use GET /camera/contact-strip."})
+			else:
+				var webp: PackedByteArray = participant.capture_contact_strip_webp()
+				if webp.is_empty():
+					_send_json(peer, 503, {"ok": false, "message": "A rendered temporal contact strip is not available yet."})
 				else:
 					_send_bytes(peer, 200, "image/webp", webp)
 		"/stream":

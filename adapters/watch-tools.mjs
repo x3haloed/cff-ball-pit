@@ -21,7 +21,7 @@ export function createCffGameTools(baseUrl = process.env.CFF_GAME_CONTROL_URL ??
         steering: z.number().min(-1).max(1).default(0),
         brake: z.boolean().default(false),
         cameraTier: z.enum(["standard", "inspection"]).default("standard").describe(
-          "standard returns a compact 640x360 view; inspection returns a higher-detail 960x540 view.",
+          "standard returns a compact 960x180 temporal contact strip; inspection returns one higher-detail 960x540 final view.",
         ),
       }),
       execute: (input) => client.act(input),

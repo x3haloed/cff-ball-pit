@@ -98,7 +98,7 @@ try {
   assert.ok(image && image.type === "image", "graphical MCP frame_action returns an image content block");
   assert.equal(image.mimeType, "image/webp");
   const standardWebp = Buffer.from(image.data, "base64");
-  assert.deepEqual(webpDimensions(standardWebp), { width: 640, height: 360 });
+  assert.deepEqual(webpDimensions(standardWebp), { width: 960, height: 180 });
   assert.match(result.content[0].text, /"personal_state"/);
 
   const inspectionResult = await mcp.callTool({
@@ -126,7 +126,7 @@ try {
   assert.equal("balls" in state.latest_result, false);
   assert.equal("participants" in state.latest_result, false);
   console.log(
-    `camera: MCP returned ${standardWebp.length}-byte 640x360 and ` +
+    `camera: MCP returned ${standardWebp.length}-byte 960x180 contact strip and ` +
       `${inspectionWebp.length}-byte 960x540 WebP frames`,
   );
 } catch (error) {

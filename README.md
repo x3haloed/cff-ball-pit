@@ -91,7 +91,8 @@ Every participant binds only to `127.0.0.1`.
 - `GET /state` — connection, frame phase, roster, body pose, and latest result
 - `POST /action` — submit a frame action
 - `GET /stream` — semantic SSE events
-- `GET /camera` — standard 640×360 lossy WebP camera frame
+- `GET /camera` — current 640×360 lossy WebP camera frame
+- `GET /camera/contact-strip` — latest 960×180 three-sample consequence strip
 - `GET /camera/inspection` — higher-detail 960×540 lossy WebP camera frame
 - `GET /help` — discover the contract
 
@@ -138,9 +139,12 @@ The MCP surface is:
 `frame_action` waits for authoritative resolution and returns semantic
 proprioception plus an `image/webp` MCP content block when the participant is
 graphical. It always returns a camera frame when rendering is available. The
-default `cameraTier` is `standard` (640×360, quality 0.75); set it to
-`inspection` for a 960×540, quality 0.85 frame. Its `kind` is `drive` by
-default; `kind: "hold"` applies authored braking and returns `action_kind:
+default `cameraTier` is `standard`: a horizontal 960×180 WebP contact strip
+whose three 320×180 panels show approximately 25%, 60%, and 100% of the
+simulated interval. Each panel has only a tiny neutral progress mark. Set
+`cameraTier` to `inspection` for one final 960×540, quality 0.85 frame. Its
+`kind` is `drive` by default; `kind: "hold"` applies authored braking and
+returns `action_kind:
 "hold"`. A missed deadline instead returns `action_kind: "timeout_brake"`.
 
 Watch-for-Buzz now accepts optional `codex.mcpServers` entries. Merge
@@ -210,5 +214,6 @@ It includes:
 - audit-log coverage
 
 Graphical camera verification can be performed on macOS by launching a normal
-participant and fetching `/camera`; the expected output is a 640×360 WebP.
-Fetch `/camera/inspection` for the 960×540 inspection tier.
+participant and fetching `/camera/contact-strip` after a resolved frame; the
+expected output is a 960×180 WebP. Fetch `/camera/inspection` for the single
+960×540 final-frame inspection tier.

@@ -19,7 +19,9 @@ var last_resolution_usec := 0
 var deadline_seconds := DEFAULT_DEADLINE_SECONDS
 var stepping := false
 var substeps_remaining := 0
+var total_substeps := 0
 var active_simulation_delta := 0.0
+var temporal_samples: Array = []
 var audit_path := ""
 
 
@@ -97,6 +99,7 @@ func _physics_process(delta: float) -> void:
 				var push := forward * throttle * 1.8
 				push.y = 0.15
 				collider.apply_central_impulse(push)
+	_record_temporal_samples()
 	substeps_remaining -= 1
 	if substeps_remaining <= 0:
 		_finish_simulation_step()
@@ -124,6 +127,8 @@ func _begin_simulation_step() -> void:
 	var real_delta := (now - delta_origin) / 1_000_000.0
 	active_simulation_delta = FrameContract.simulation_delta(real_delta)
 	substeps_remaining = maxi(1, roundi(active_simulation_delta * PHYSICS_HZ))
+	total_substeps = substeps_remaining
+	temporal_samples.clear()
 	_append_audit("frame_committed", {
 		"frame_id": frame_id,
 		"simulation_delta": active_simulation_delta,
@@ -162,6 +167,7 @@ func _finish_simulation_step() -> void:
 			participant_id,
 			bool(participant.timed_out),
 			str(actions.get(participant_id, FrameContract.fallback_action()).kind),
+			temporal_samples,
 		)
 	call_deferred("_open_frame")
 
@@ -271,6 +277,7 @@ func frame_resolved(
 	_participant_id: String,
 	_timed_out: bool,
 	_action_kind: String,
+	_temporal_samples: Array,
 ) -> void:
 	pass
 
@@ -318,6 +325,24 @@ func _action_kind_snapshot() -> Dictionary:
 			actions.get(participant_id, FrameContract.fallback_action()).kind
 		)
 	return kinds
+
+
+func _record_temporal_samples() -> void:
+	if total_substeps <= 0:
+		return
+	var completed := total_substeps - substeps_remaining + 1
+	var progress := float(completed) / float(total_substeps)
+	var targets := [0.25, 0.60, 1.0]
+	while temporal_samples.size() < targets.size():
+		var target: float = targets[temporal_samples.size()]
+		if progress + 0.0001 < target:
+			break
+		var snapshot := _world_snapshot()
+		temporal_samples.append({
+			"progress": target,
+			"participants": snapshot.participants,
+			"balls": snapshot.balls,
+		})
 
 
 func _world_snapshot() -> Dictionary:

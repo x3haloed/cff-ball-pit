@@ -62,7 +62,7 @@ export class GameClient {
   }
 
   async camera(tier = "standard") {
-    const path = tier === "inspection" ? "/camera/inspection" : "/camera";
+    const path = tier === "inspection" ? "/camera/inspection" : "/camera/contact-strip";
     const response = await fetch(`${this.baseUrl}${path}`);
     if (response.status === 503) return undefined;
     if (!response.ok) {

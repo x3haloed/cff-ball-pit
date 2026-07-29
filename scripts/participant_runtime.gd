@@ -20,6 +20,7 @@ var robots := {}
 var camera: Camera3D
 var control: Node
 var runtime_descriptor_path := ""
+var contact_strip_webp := PackedByteArray()
 
 const CAMERA_TIERS := {
 	"standard": {
@@ -33,6 +34,8 @@ const CAMERA_TIERS := {
 		"quality": 0.85,
 	},
 }
+const CONTACT_PANEL_SIZE := Vector2i(320, 180)
+const CONTACT_PROGRESS := [0.25, 0.60, 1.0]
 
 
 func _init() -> void:
@@ -106,6 +109,12 @@ func capture_webp(tier: String = "standard") -> PackedByteArray:
 		Image.INTERPOLATE_LANCZOS,
 	)
 	return image.save_webp_to_buffer(true, float(settings.quality))
+
+
+func capture_contact_strip_webp() -> PackedByteArray:
+	if DisplayServer.get_name() == "headless":
+		return PackedByteArray()
+	return contact_strip_webp
 
 
 func _build_camera() -> void:
@@ -237,9 +246,10 @@ func frame_resolved(
 	for_participant_id: String,
 	timed_out: bool,
 	action_kind: String,
+	temporal_samples: Array,
 ) -> void:
 	if for_participant_id == participant_id:
-		_accept_result(result, timed_out, false, action_kind)
+		_accept_result(result, timed_out, false, action_kind, temporal_samples)
 
 
 func _accept_result(
@@ -247,9 +257,13 @@ func _accept_result(
 	timed_out: bool,
 	replayed: bool,
 	action_kind: String,
+	temporal_samples: Array,
 ) -> void:
 	accepting_actions = false
 	latest_result = result
+	_apply_snapshot(result)
+	if DisplayServer.get_name() != "headless":
+		await _build_contact_strip(temporal_samples, result)
 	latest_result_metadata = {
 		"frame_id": int(result.get("frame_id", 0)),
 		"simulation_delta": float(result.get("simulation_delta", 0.0)),
@@ -257,7 +271,6 @@ func _accept_result(
 		"timed_out": timed_out,
 		"replayed": replayed,
 	}
-	_apply_snapshot(result)
 	control.emit_semantic("frame_observation", {
 		"summary": "Frame %d resolved after %.2f simulated seconds." % [
 			int(result.get("frame_id", 0)),
@@ -271,6 +284,59 @@ func _accept_result(
 		"personal_state": latest_personal_state,
 		"camera_url": "%s/camera" % control.base_url(),
 	})
+
+
+func _build_contact_strip(samples: Array, final_result: Dictionary) -> void:
+	var strip := Image.create(
+		CONTACT_PANEL_SIZE.x * CONTACT_PROGRESS.size(),
+		CONTACT_PANEL_SIZE.y,
+		false,
+		Image.FORMAT_RGB8,
+	)
+	strip.fill(Color(0.08, 0.08, 0.08))
+	for index in CONTACT_PROGRESS.size():
+		var sample: Dictionary = (
+			samples[index]
+			if index < samples.size() and samples[index] is Dictionary
+			else final_result
+		)
+		_apply_snapshot(sample)
+		await RenderingServer.frame_post_draw
+		var panel := get_viewport().get_texture().get_image()
+		if panel == null or panel.is_empty():
+			continue
+		panel.resize(
+			CONTACT_PANEL_SIZE.x,
+			CONTACT_PANEL_SIZE.y,
+			Image.INTERPOLATE_LANCZOS,
+		)
+		panel.convert(Image.FORMAT_RGB8)
+		var panel_origin := Vector2i(index * CONTACT_PANEL_SIZE.x, 0)
+		strip.blit_rect(
+			panel,
+			Rect2i(Vector2i.ZERO, CONTACT_PANEL_SIZE),
+			panel_origin,
+		)
+		_draw_progress_mark(strip, panel_origin.x, float(CONTACT_PROGRESS[index]))
+	_apply_snapshot(final_result)
+	await RenderingServer.frame_post_draw
+	contact_strip_webp = strip.save_webp_to_buffer(true, 0.75)
+
+
+func _draw_progress_mark(image: Image, panel_x: int, progress: float) -> void:
+	const MARK_WIDTH := 48
+	const MARK_HEIGHT := 3
+	const MARK_BOTTOM_MARGIN := 6
+	var x := panel_x + (CONTACT_PANEL_SIZE.x - MARK_WIDTH) / 2
+	var y := CONTACT_PANEL_SIZE.y - MARK_BOTTOM_MARGIN - MARK_HEIGHT
+	image.fill_rect(
+		Rect2i(x, y, MARK_WIDTH, MARK_HEIGHT),
+		Color(0.18, 0.18, 0.18),
+	)
+	image.fill_rect(
+		Rect2i(x, y, roundi(MARK_WIDTH * progress), MARK_HEIGHT),
+		Color(0.78, 0.78, 0.78),
+	)
 
 
 func _on_connected() -> void:
