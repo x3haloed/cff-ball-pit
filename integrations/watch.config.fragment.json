@@ -1,7 +1,7 @@
 {
   "game": {
     "controlUrl": "http://127.0.0.1:38473",
-    "actionTimeoutMs": 45000
+    "actionTimeoutMs": 60000
   },
   "sseStreams": [
     {

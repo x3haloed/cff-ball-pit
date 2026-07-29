@@ -1,7 +1,7 @@
 extends Node
 
 const DEFAULT_PORT := 39090
-const DEFAULT_DEADLINE_SECONDS := 20.0
+const DEFAULT_DEADLINE_SECONDS := 45.0
 const PHYSICS_HZ := 60.0
 const ROBOT_SPEED := 5.0
 const ROBOT_TURN_RATE := 2.2

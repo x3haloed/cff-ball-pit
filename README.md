@@ -43,7 +43,7 @@ npm install
 Start the authority:
 
 ```bash
-npm run server -- --deadline 20
+npm run server -- --deadline 45
 ```
 
 Start two graphical participants:

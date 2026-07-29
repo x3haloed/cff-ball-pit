@@ -16,7 +16,7 @@ if (command === "server") {
     "--headless", "--path", root, "--",
     "--mode", "server",
     "--port", value("port", "39090"),
-    "--deadline", value("deadline", "20"),
+    "--deadline", value("deadline", "45"),
     "--audit", value("audit", resolve(root, ".cff/server-events.jsonl")),
   ]);
 } else if (command === "play") {
@@ -50,7 +50,7 @@ if (command === "server") {
   console.log(JSON.stringify(rows, null, 2));
 } else {
   console.log(`Usage:
-  node tools/launch.mjs server [--port 39090] [--deadline 20]
+  node tools/launch.mjs server [--port 39090] [--deadline 45]
   node tools/launch.mjs play --profile aster [--name Aster] [--headless]
   node tools/launch.mjs players`);
 }

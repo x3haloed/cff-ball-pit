@@ -1,4 +1,4 @@
-const DEFAULT_TIMEOUT_MS = 45_000;
+const DEFAULT_TIMEOUT_MS = 60_000;
 
 export class GameClient {
   constructor(baseUrl, options = {}) {
