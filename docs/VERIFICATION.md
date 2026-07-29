@@ -17,6 +17,7 @@ Verified on 2026-07-28 with Godot `4.6.3.stable.official.7d41c59c4`.
 | Watch-for-Buzz MCP | Optional protected `codex.mcpServers` config merges the game MCP next to `wfb-memory`; game MCP exposes `game_state` and `frame_action`. | WFB typecheck, build, 68-test suite, configuration test, and real stdio MCP smoke pass. |
 | Profile isolation | Stable profile-derived ports, runtime descriptors, duplicate descriptor rejection, and authority-side identity rejection. | Smoke test proves duplicate-profile process exits and later same-profile rejoin succeeds after departure. |
 | Timeout fallback | Missing actions become explicit neutral braking actions and receive an audit event. | Smoke requires `action_timeout_fallback` and observes the timed-out frame resolve. |
+| Authored hold provenance | `kind: "hold"` mechanically brakes but remains distinct from the server-authored `timeout_brake` fallback in returned observations and audit records. | Contract unit test and multi-process smoke assert both provenance values through submission, resolution, and audit. |
 | Stale/duplicate/future safety | Server stores 64 results, replays stale frames without applying them, treats repeat submissions as duplicates, and rejects future frames. | Smoke requires `action_replayed` and `action_duplicate`, and asserts future HTTP conflict. |
 | Disconnect/rejoin | Disconnect removes the participant from the current barrier and body roster; profile may reconnect at a later frame boundary. | Multi-process smoke kills Beta, observes roster size one, then rejoins Beta. |
 | Headless operation | Server and semantic participants run with Godot's headless renderer; camera reports HTTP 503 when unavailable. | Portable smoke is fully headless and asserts `/camera` returns 503. |
@@ -42,7 +43,7 @@ npm test
 
 Final results:
 
-- Game contract: 7 assertions passed.
+- Game contract: 8 assertions passed.
 - Game headless smoke: two-client barrier, physics, SSE, MCP, timeout,
   disconnect/rejoin, and audit passed.
 - Graphical MCP smoke: valid 640×360 standard and 960×540 inspection WebPs were returned by `frame_action`.

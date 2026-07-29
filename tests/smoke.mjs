@@ -127,10 +127,11 @@ try {
   assert.ok(resolved.latest_result.simulation_delta <= 2);
   assert.deepEqual(
     Object.keys(resolved.latest_result).sort(),
-    ["frame_id", "replayed", "simulation_delta", "timed_out"].sort(),
+    ["action_kind", "frame_id", "replayed", "simulation_delta", "timed_out"].sort(),
   );
   assert.equal(resolved.latest_result.timed_out, false);
   assert.equal(resolved.latest_result.replayed, false);
+  assert.equal(resolved.latest_result.action_kind, "drive");
   assert.equal("balls" in resolved.latest_result, false);
   assert.equal("participants" in resolved.latest_result, false);
   assert.notDeepEqual(resolved.personal_state.position, alphaStart);
@@ -149,18 +150,25 @@ try {
   assert.match(future.value.message, /Expected frame/);
 
   const betaCurrent = (await state(betaPort)).frame_id;
-  const betaHold = await act(betaPort, { frame_id: betaCurrent, brake: true });
+  const betaHold = await act(betaPort, { frame_id: betaCurrent, kind: "hold" });
   assert.equal(betaHold.response.status, 202);
   await waitFor(async () => (await state(alphaPort)).latest_result?.frame_id >= current, "duplicate-action frame");
+  const heldResult = await waitFor(async () => {
+    const value = await state(betaPort);
+    return value.latest_result?.frame_id >= current ? value : undefined;
+  }, "authored hold result");
+  assert.equal(heldResult.latest_result.action_kind, "hold");
 
   const timeoutFrame = (await state(alphaPort)).frame_id;
-  await act(alphaPort, { frame_id: timeoutFrame, brake: true });
+  await act(alphaPort, { frame_id: timeoutFrame, kind: "hold" });
   const timeoutResult = await waitFor(async () => {
     const value = await state(betaPort);
     return value.latest_result?.frame_id >= timeoutFrame ? value : undefined;
   }, "timeout fallback frame");
   assert.equal(timeoutResult.latest_result.frame_id, timeoutFrame);
   assert.equal(timeoutResult.latest_result.timed_out, true);
+  assert.equal(timeoutResult.latest_result.action_kind, "timeout_brake");
+  assert.equal((await state(alphaPort)).latest_result.action_kind, "hold");
 
   const mcp = new Client({ name: "smoke", version: "1.0.0" });
   const mcpTransport = new StdioClientTransport({
@@ -206,7 +214,24 @@ try {
   for (const required of ["server_started", "participant_joined", "action_submitted", "action_duplicate", "action_replayed", "action_timeout_fallback", "frame_committed", "frame_resolved", "participant_departed"]) {
     assert.ok(kinds.has(required), `audit contains ${required}`);
   }
-  assert.ok(events.some((event) => event.kind === "frame_committed" && Object.values(event.details.actions).some((action) => action.brake === true)));
+  assert.ok(events.some(
+    (event) =>
+      event.kind === "action_submitted" &&
+      event.details.action.kind === "hold" &&
+      event.details.action.brake === true,
+  ));
+  assert.ok(events.some(
+    (event) =>
+      event.kind === "action_timeout_fallback" &&
+      event.details.action.kind === "timeout_brake" &&
+      event.details.action.brake === true,
+  ));
+  assert.ok(events.some(
+    (event) =>
+      event.kind === "frame_resolved" &&
+      Object.values(event.details.action_kinds).includes("hold") &&
+      Object.values(event.details.action_kinds).includes("timeout_brake"),
+  ));
 
   assert.equal(server.exitCode, null);
   assert.equal(alpha.exitCode, null);

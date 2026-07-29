@@ -104,9 +104,7 @@ try {
   const inspectionResult = await mcp.callTool({
     name: "frame_action",
     arguments: {
-      throttle: 0,
-      steering: 0,
-      brake: true,
+      kind: "hold",
       cameraTier: "inspection",
     },
   });
@@ -115,14 +113,16 @@ try {
   assert.equal(inspectionImage.mimeType, "image/webp");
   const inspectionWebp = Buffer.from(inspectionImage.data, "base64");
   assert.deepEqual(webpDimensions(inspectionWebp), { width: 960, height: 540 });
+  assert.match(inspectionResult.content[0].text, /"action_kind":"hold"/);
 
   await mcp.close();
   const state = await client.state();
   assert.equal(state.latest_result.frame_id + 1, state.frame_id);
   assert.deepEqual(
     Object.keys(state.latest_result).sort(),
-    ["frame_id", "replayed", "simulation_delta", "timed_out"].sort(),
+    ["action_kind", "frame_id", "replayed", "simulation_delta", "timed_out"].sort(),
   );
+  assert.equal(state.latest_result.action_kind, "hold");
   assert.equal("balls" in state.latest_result, false);
   assert.equal("participants" in state.latest_result, false);
   console.log(

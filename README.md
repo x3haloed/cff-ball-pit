@@ -72,7 +72,8 @@ For frame `N`:
 
 1. The server freezes the world and snapshots the active roster.
 2. Every roster member receives `frame_ready`.
-3. Each submits one clamped `{ throttle, steering, brake }` action.
+3. Each submits one clamped `{ kind, throttle, steering, brake }` action.
+   `kind: "hold"` is an authored braking action distinct from a missed deadline.
 4. Duplicate actions are idempotent; future actions are rejected.
 5. At the barrier deadline, missing actions become neutral braking actions.
 6. The server quantizes real decision duration to 0.25-second increments,
@@ -101,7 +102,7 @@ BASE=http://127.0.0.1:38473
 FRAME=$(curl -sS "$BASE/state" | jq .frame_id)
 curl -sS -X POST "$BASE/action" \
   -H 'content-type: application/json' \
-  --data "{\"frame_id\":$FRAME,\"throttle\":0.8,\"steering\":-0.2,\"brake\":false}"
+  --data "{\"frame_id\":$FRAME,\"kind\":\"drive\",\"throttle\":0.8,\"steering\":-0.2,\"brake\":false}"
 curl -sS "$BASE/camera" > camera.webp
 ```
 
@@ -138,7 +139,9 @@ The MCP surface is:
 proprioception plus an `image/webp` MCP content block when the participant is
 graphical. It always returns a camera frame when rendering is available. The
 default `cameraTier` is `standard` (640×360, quality 0.75); set it to
-`inspection` for a 960×540, quality 0.85 frame.
+`inspection` for a 960×540, quality 0.85 frame. Its `kind` is `drive` by
+default; `kind: "hold"` applies authored braking and returns `action_kind:
+"hold"`. A missed deadline instead returns `action_kind: "timeout_brake"`.
 
 Watch-for-Buzz now accepts optional `codex.mcpServers` entries. Merge
 [`integrations/watch-for-buzz.config.fragment.json`](integrations/watch-for-buzz.config.fragment.json)

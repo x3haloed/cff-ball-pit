@@ -109,7 +109,7 @@ func _handle_request(peer: StreamPeerTCP, request_text: String) -> bool:
 				"base_url": base_url(),
 				"endpoints": {
 					"GET /state": "Current participant, frame, roster, and latest authoritative observation.",
-					"POST /action": "Submit {frame_id, throttle, steering, brake}.",
+					"POST /action": "Submit {frame_id, kind: drive|hold, throttle, steering, brake}.",
 					"GET /stream": "Semantic SSE events including frame_ready and frame_observation.",
 					"GET /camera": "Current participant camera as 640x360 WebP; unavailable in headless mode.",
 					"GET /camera/inspection": "Current participant camera as higher-detail 960x540 WebP.",

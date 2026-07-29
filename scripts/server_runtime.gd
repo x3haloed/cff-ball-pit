@@ -146,6 +146,7 @@ func _finish_simulation_step() -> void:
 		"frame_id": frame_id,
 		"simulation_delta": active_simulation_delta,
 		"resolved_at_unix_ms": Time.get_unix_time_from_system() * 1000.0,
+		"action_kinds": _action_kind_snapshot(),
 		"participants": snapshot.participants,
 		"balls": snapshot.balls,
 	}
@@ -160,6 +161,7 @@ func _finish_simulation_step() -> void:
 			result,
 			participant_id,
 			bool(participant.timed_out),
+			str(actions.get(participant_id, FrameContract.fallback_action()).kind),
 		)
 	call_deferred("_open_frame")
 
@@ -264,7 +266,12 @@ func action_replayed(_result: Dictionary, _participant_id: String) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
-func frame_resolved(_result: Dictionary, _participant_id: String, _timed_out: bool) -> void:
+func frame_resolved(
+	_result: Dictionary,
+	_participant_id: String,
+	_timed_out: bool,
+	_action_kind: String,
+) -> void:
 	pass
 
 
@@ -302,6 +309,15 @@ func _active_ids() -> Array:
 func _all_actions_present() -> bool:
 	var ids := frame_participants
 	return not ids.is_empty() and ids.all(func(participant_id): return actions.has(participant_id))
+
+
+func _action_kind_snapshot() -> Dictionary:
+	var kinds := {}
+	for participant_id in frame_participants:
+		kinds[participant_id] = str(
+			actions.get(participant_id, FrameContract.fallback_action()).kind
+		)
+	return kinds
 
 
 func _world_snapshot() -> Dictionary:

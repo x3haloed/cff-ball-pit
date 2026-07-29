@@ -14,6 +14,9 @@ export function createCffGameTools(baseUrl = process.env.CFF_GAME_CONTROL_URL ??
       description: "Submit one body action, wait for the shared physics step, and see the resulting camera frame.",
       inputSchema: z.object({
         frameId: z.number().int().optional(),
+        kind: z.enum(["drive", "hold"]).default("drive").describe(
+          "Use hold for an authored stationary braking action with provenance distinct from a timeout.",
+        ),
         throttle: z.number().min(-1).max(1).default(0),
         steering: z.number().min(-1).max(1).default(0),
         brake: z.boolean().default(false),

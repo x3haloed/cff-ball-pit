@@ -16,6 +16,9 @@ server.tool(
   "Submit one action for the current synchronized decision frame. Waits for the authoritative barrier and returns the resulting camera view and proprioception.",
   {
     frameId: z.number().int().optional(),
+    kind: z.enum(["drive", "hold"]).default("drive").describe(
+      "Use hold for an authored stationary braking action with provenance distinct from a timeout.",
+    ),
     throttle: z.number().min(-1).max(1).default(0),
     steering: z.number().min(-1).max(1).default(0),
     brake: z.boolean().default(false),

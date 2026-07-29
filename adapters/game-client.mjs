@@ -19,6 +19,7 @@ export class GameClient {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         frame_id: frameId,
+        kind: input.kind ?? "drive",
         throttle: input.throttle ?? 0,
         steering: input.steering ?? 0,
         brake: input.brake ?? false,
@@ -93,6 +94,7 @@ export function observationText(result) {
     frame_id: resolved.frame_id,
     next_frame_id: state.frame_id,
     simulation_delta: resolved.simulation_delta,
+    action_kind: resolved.action_kind,
     participant_id: state.participant_id,
     personal_state: state.personal_state,
     roster: state.roster,

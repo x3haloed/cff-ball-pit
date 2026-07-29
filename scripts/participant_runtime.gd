@@ -232,17 +232,28 @@ func action_replayed(result: Dictionary, for_participant_id: String) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
-func frame_resolved(result: Dictionary, for_participant_id: String, timed_out: bool) -> void:
+func frame_resolved(
+	result: Dictionary,
+	for_participant_id: String,
+	timed_out: bool,
+	action_kind: String,
+) -> void:
 	if for_participant_id == participant_id:
-		_accept_result(result, timed_out, false)
+		_accept_result(result, timed_out, false, action_kind)
 
 
-func _accept_result(result: Dictionary, timed_out: bool, replayed: bool) -> void:
+func _accept_result(
+	result: Dictionary,
+	timed_out: bool,
+	replayed: bool,
+	action_kind: String,
+) -> void:
 	accepting_actions = false
 	latest_result = result
 	latest_result_metadata = {
 		"frame_id": int(result.get("frame_id", 0)),
 		"simulation_delta": float(result.get("simulation_delta", 0.0)),
+		"action_kind": action_kind,
 		"timed_out": timed_out,
 		"replayed": replayed,
 	}
@@ -253,8 +264,9 @@ func _accept_result(result: Dictionary, timed_out: bool, replayed: bool) -> void
 			float(result.get("simulation_delta", 0.0)),
 		],
 		"frame_id": int(result.get("frame_id", 0)),
-		"simulation_delta": float(result.get("simulation_delta", 0.0)),
-		"timed_out": timed_out,
+			"simulation_delta": float(result.get("simulation_delta", 0.0)),
+			"action_kind": action_kind,
+			"timed_out": timed_out,
 		"replayed": replayed,
 		"personal_state": latest_personal_state,
 		"camera_url": "%s/camera" % control.base_url(),
