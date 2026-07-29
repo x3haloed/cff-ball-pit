@@ -21,6 +21,7 @@ var camera: Camera3D
 var control: Node
 var runtime_descriptor_path := ""
 var contact_strip_webp := PackedByteArray()
+var camera_frame_id := 0
 
 const CAMERA_TIERS := {
 	"standard": {
@@ -91,9 +92,10 @@ func semantic_state() -> Dictionary:
 		"frame_id": current_frame_id,
 		"accepting_actions": accepting_actions,
 		"roster": current_roster,
-		"personal_state": latest_personal_state,
-		"latest_result": latest_result_metadata,
-	}
+			"personal_state": latest_personal_state,
+			"latest_result": latest_result_metadata,
+			"camera_frame_id": camera_frame_id,
+		}
 
 
 func capture_webp(tier: String = "standard") -> PackedByteArray:
@@ -262,8 +264,6 @@ func _accept_result(
 	accepting_actions = false
 	latest_result = result
 	_apply_snapshot(result)
-	if DisplayServer.get_name() != "headless":
-		await _build_contact_strip(temporal_samples, result)
 	latest_result_metadata = {
 		"frame_id": int(result.get("frame_id", 0)),
 		"simulation_delta": float(result.get("simulation_delta", 0.0)),
@@ -284,6 +284,11 @@ func _accept_result(
 		"personal_state": latest_personal_state,
 		"camera_url": "%s/camera" % control.base_url(),
 	})
+	if DisplayServer.get_name() == "headless":
+		camera_frame_id = int(result.get("frame_id", 0))
+	else:
+		_build_contact_strip(temporal_samples, result)
+		camera_frame_id = int(result.get("frame_id", 0))
 
 
 func _build_contact_strip(samples: Array, final_result: Dictionary) -> void:
@@ -301,7 +306,7 @@ func _build_contact_strip(samples: Array, final_result: Dictionary) -> void:
 			else final_result
 		)
 		_apply_snapshot(sample)
-		await RenderingServer.frame_post_draw
+		RenderingServer.force_draw(false)
 		var panel := get_viewport().get_texture().get_image()
 		if panel == null or panel.is_empty():
 			continue
@@ -319,7 +324,7 @@ func _build_contact_strip(samples: Array, final_result: Dictionary) -> void:
 		)
 		_draw_progress_mark(strip, panel_origin.x, float(CONTACT_PROGRESS[index]))
 	_apply_snapshot(final_result)
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw(false)
 	contact_strip_webp = strip.save_webp_to_buffer(true, 0.75)
 
 

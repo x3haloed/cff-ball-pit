@@ -118,6 +118,7 @@ try {
   await mcp.close();
   const state = await client.state();
   assert.equal(state.latest_result.frame_id + 1, state.frame_id);
+  assert.equal(state.camera_frame_id, state.latest_result.frame_id);
   assert.deepEqual(
     Object.keys(state.latest_result).sort(),
     ["action_kind", "frame_id", "replayed", "simulation_delta", "timed_out"].sort(),

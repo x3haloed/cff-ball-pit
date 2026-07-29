@@ -25,8 +25,9 @@ export class GameClient {
         brake: input.brake ?? false,
       }),
     });
-    const observation = await this.waitForFrame(frameId);
     const cameraTier = input.cameraTier ?? input.camera_tier ?? "standard";
+    const observation = await this.waitForFrame(frameId);
+    await this.waitForCamera(frameId);
     const camera = await this.camera(cameraTier);
     return { response, observation, camera };
   }
@@ -59,6 +60,21 @@ export class GameClient {
       await new Promise((resolve) => setTimeout(resolve, this.pollMs));
     }
     throw new Error(`Timed out waiting for authoritative frame ${frameId}`);
+  }
+
+  async waitForCamera(frameId) {
+    const deadline = Date.now() + this.timeoutMs;
+    while (Date.now() < deadline) {
+      const state = await this.state();
+      if (
+        state.camera_frame_id == null ||
+        Number(state.camera_frame_id) >= frameId
+      ) {
+        return state;
+      }
+      await new Promise((resolve) => setTimeout(resolve, this.pollMs));
+    }
+    throw new Error(`Timed out waiting for camera consequence for frame ${frameId}`);
   }
 
   async camera(tier = "standard") {

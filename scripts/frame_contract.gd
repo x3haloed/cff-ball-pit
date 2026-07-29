@@ -1,7 +1,7 @@
 class_name FrameContract
 extends RefCounted
 
-const PROTOCOL_VERSION := 2
+const PROTOCOL_VERSION := 3
 const MIN_SIMULATION_DELTA := 0.25
 const MAX_SIMULATION_DELTA := 2.0
 const QUANTUM := 0.25

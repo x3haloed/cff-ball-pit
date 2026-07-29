@@ -121,6 +121,12 @@ as a waking SSE stream in either Watch harness:
 }
 ```
 
+Compact state publishes `latest_result.frame_id` immediately when an
+authoritative consequence is applied. `camera_frame_id` advances separately
+after that frame's contact strip and restored final inspection view are ready;
+tool clients gate on both values so camera work cannot block semantic progress
+or return a stale consequence.
+
 ## Tool adapters
 
 ### Watch for Buzz / Codex MCP

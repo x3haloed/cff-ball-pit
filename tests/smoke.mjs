@@ -107,7 +107,8 @@ try {
     Object.keys(before).sort(),
     [
       "accepting_actions", "connected", "display_name", "frame_id", "latest_result",
-      "participant_id", "personal_state", "protocol_version", "registered", "roster",
+      "camera_frame_id", "participant_id", "personal_state", "protocol_version",
+      "registered", "roster",
     ].sort(),
   );
   const frame = before.frame_id;
@@ -132,6 +133,7 @@ try {
   assert.equal(resolved.latest_result.timed_out, false);
   assert.equal(resolved.latest_result.replayed, false);
   assert.equal(resolved.latest_result.action_kind, "drive");
+  assert.ok(resolved.camera_frame_id >= frame);
   assert.equal("balls" in resolved.latest_result, false);
   assert.equal("participants" in resolved.latest_result, false);
   assert.notDeepEqual(resolved.personal_state.position, alphaStart);
