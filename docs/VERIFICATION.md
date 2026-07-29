@@ -11,7 +11,7 @@ Verified on 2026-07-28 with Godot `4.6.3.stable.official.7d41c59c4`.
 | Synchronized decision barrier | `frame_participants` freezes the active roster; `_all_actions_present` or the deadline closes the barrier. Physics remains paused outside committed substeps. | Smoke test submits both actions, omits one action for timeout, and disconnects a barrier member. |
 | Time derived from decision cadence | Wall duration between resolved frames is quantized to 0.25 seconds and clamped to 0.25–2 simulated seconds; each interval runs at 60 substeps/second. | Seven contract assertions and smoke assertions on authoritative `simulation_delta`. |
 | Simultaneous next-frame release | One complete authoritative snapshot is created after the final substep and sent to every frame participant before the next frame opens. | Both clients report the same resolved frame and replicated roster; audit contains one `frame_resolved` snapshot per commit. |
-| Tool action returns camera | Shared client waits for the requested frame, then retrieves `/camera`; MCP emits `image/png`, and Watch converts it through `toModelOutput`. | Graphical MCP smoke receives and validates a 960×540 PNG; Watch unit test validates multimodal media output. |
+| Tool action returns camera | Shared client waits for the requested frame, then retrieves a standard 640×360 or inspection 960×540 lossy WebP; MCP emits `image/webp`, and Watch converts it through `toModelOutput`. | Graphical MCP smoke receives and validates both WebP tiers; Watch unit test validates multimodal media output. |
 | Harness-neutral HTTP/SSE | Per-profile loopback exposes `/state`, `/action`, `/stream`, `/camera`, and `/help`. | Smoke test uses HTTP actions/state and parses an SSE `hello`. |
 | Watch native tools | Optional `game` config adds `game_state` and `frame_action` to Watch's native AI SDK tool set. | Watch typecheck, build, 65-test suite, and focused multimodal game-tool test pass. |
 | Watch-for-Buzz MCP | Optional protected `codex.mcpServers` config merges the game MCP next to `wfb-memory`; game MCP exposes `game_state` and `frame_action`. | WFB typecheck, build, 68-test suite, configuration test, and real stdio MCP smoke pass. |
@@ -45,7 +45,6 @@ Final results:
 - Game contract: 7 assertions passed.
 - Game headless smoke: two-client barrier, physics, SSE, MCP, timeout,
   disconnect/rejoin, and audit passed.
-- Graphical MCP smoke: a valid 960×540 PNG was returned by `frame_action`.
+- Graphical MCP smoke: valid 640×360 standard and 960×540 inspection WebPs were returned by `frame_action`.
 - Watch: typecheck and build passed; 65 tests passed.
 - Watch-for-Buzz: typecheck and build passed; 68 tests passed.
-

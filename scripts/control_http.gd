@@ -111,7 +111,8 @@ func _handle_request(peer: StreamPeerTCP, request_text: String) -> bool:
 					"GET /state": "Current participant, frame, roster, and latest authoritative observation.",
 					"POST /action": "Submit {frame_id, throttle, steering, brake}.",
 					"GET /stream": "Semantic SSE events including frame_ready and frame_observation.",
-					"GET /camera": "Current participant camera as PNG; unavailable in headless mode.",
+					"GET /camera": "Current participant camera as 640x360 WebP; unavailable in headless mode.",
+					"GET /camera/inspection": "Current participant camera as higher-detail 960x540 WebP.",
 				},
 			})
 		"/state":
@@ -127,15 +128,16 @@ func _handle_request(peer: StreamPeerTCP, request_text: String) -> bool:
 				var frame := int(body.get("frame_id", participant.current_frame_id))
 				var result: Dictionary = participant.submit_action(frame, body)
 				_send_json(peer, 202 if bool(result.get("ok", false)) else 409, result)
-		"/camera":
+		"/camera", "/camera/inspection":
 			if method != "GET":
 				_send_json(peer, 405, {"ok": false, "message": "Use GET /camera."})
 			else:
-				var png: PackedByteArray = participant.capture_png()
-				if png.is_empty():
+				var tier := "inspection" if path == "/camera/inspection" else "standard"
+				var webp: PackedByteArray = participant.capture_webp(tier)
+				if webp.is_empty():
 					_send_json(peer, 503, {"ok": false, "message": "Camera capture is unavailable in this renderer."})
 				else:
-					_send_bytes(peer, 200, "image/png", png)
+					_send_bytes(peer, 200, "image/webp", webp)
 		"/stream":
 			if method != "GET":
 				_send_json(peer, 405, {"ok": false, "message": "Use GET /stream."})

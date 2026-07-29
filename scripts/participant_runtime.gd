@@ -20,6 +20,19 @@ var camera: Camera3D
 var control: Node
 var runtime_descriptor_path := ""
 
+const CAMERA_TIERS := {
+	"standard": {
+		"width": 640,
+		"height": 360,
+		"quality": 0.75,
+	},
+	"inspection": {
+		"width": 960,
+		"height": 540,
+		"quality": 0.85,
+	},
+}
+
 
 func _init() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -82,13 +95,19 @@ func semantic_state() -> Dictionary:
 	}
 
 
-func capture_png() -> PackedByteArray:
+func capture_webp(tier: String = "standard") -> PackedByteArray:
 	if DisplayServer.get_name() == "headless":
 		return PackedByteArray()
 	var image := get_viewport().get_texture().get_image()
 	if image == null or image.is_empty():
 		return PackedByteArray()
-	return image.save_png_to_buffer()
+	var settings: Dictionary = CAMERA_TIERS.get(tier, CAMERA_TIERS.standard)
+	image.resize(
+		int(settings.width),
+		int(settings.height),
+		Image.INTERPOLATE_LANCZOS,
+	)
+	return image.save_webp_to_buffer(true, float(settings.quality))
 
 
 func _build_camera() -> void:

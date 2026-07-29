@@ -90,7 +90,8 @@ Every participant binds only to `127.0.0.1`.
 - `GET /state` — connection, frame phase, roster, body pose, and latest result
 - `POST /action` — submit a frame action
 - `GET /stream` — semantic SSE events
-- `GET /camera` — current camera PNG
+- `GET /camera` — standard 640×360 lossy WebP camera frame
+- `GET /camera/inspection` — higher-detail 960×540 lossy WebP camera frame
 - `GET /help` — discover the contract
 
 Example:
@@ -101,7 +102,7 @@ FRAME=$(curl -sS "$BASE/state" | jq .frame_id)
 curl -sS -X POST "$BASE/action" \
   -H 'content-type: application/json' \
   --data "{\"frame_id\":$FRAME,\"throttle\":0.8,\"steering\":-0.2,\"brake\":false}"
-curl -sS "$BASE/camera" > camera.png
+curl -sS "$BASE/camera" > camera.webp
 ```
 
 SSE events include `frame_ready`, `frame_committed`, `frame_observation`,
@@ -134,8 +135,10 @@ The MCP surface is:
 - `frame_action`
 
 `frame_action` waits for authoritative resolution and returns semantic
-proprioception plus an `image/png` MCP content block when the participant is
-graphical.
+proprioception plus an `image/webp` MCP content block when the participant is
+graphical. It always returns a camera frame when rendering is available. The
+default `cameraTier` is `standard` (640×360, quality 0.75); set it to
+`inspection` for a 960×540, quality 0.85 frame.
 
 Watch-for-Buzz now accepts optional `codex.mcpServers` entries. Merge
 [`integrations/watch-for-buzz.config.fragment.json`](integrations/watch-for-buzz.config.fragment.json)
@@ -157,7 +160,7 @@ Watch now accepts an optional `game` config entry and exposes `game_state` and
 `frame_action` as native tools. Merge
 [`integrations/watch.config.fragment.json`](integrations/watch.config.fragment.json)
 into the instance `config.json`. Its `frame_action` uses AI SDK
-`toModelOutput` to turn the returned PNG into a multimodal tool result rather
+`toModelOutput` to turn the returned WebP into a multimodal tool result rather
 than burying the image in JSON.
 
 [`adapters/watch-tools.mjs`](adapters/watch-tools.mjs) remains available as a
@@ -204,4 +207,5 @@ It includes:
 - audit-log coverage
 
 Graphical camera verification can be performed on macOS by launching a normal
-participant and fetching `/camera`; the expected output is a 960×540 PNG.
+participant and fetching `/camera`; the expected output is a 640×360 WebP.
+Fetch `/camera/inspection` for the 960×540 inspection tier.

@@ -38,6 +38,34 @@ async function waitFor(check, label, timeoutMs = 15_000) {
   throw new Error(`Timed out waiting for ${label}${error ? `: ${error.message}` : ""}`);
 }
 
+function webpDimensions(buffer) {
+  assert.equal(buffer.toString("ascii", 0, 4), "RIFF");
+  assert.equal(buffer.toString("ascii", 8, 12), "WEBP");
+  const chunk = buffer.toString("ascii", 12, 16);
+  if (chunk === "VP8 ") {
+    assert.deepEqual([...buffer.subarray(23, 26)], [157, 1, 42]);
+    return {
+      width: buffer.readUInt16LE(26) & 0x3fff,
+      height: buffer.readUInt16LE(28) & 0x3fff,
+    };
+  }
+  if (chunk === "VP8L") {
+    assert.equal(buffer[20], 0x2f);
+    const bits = buffer.readUInt32LE(21);
+    return {
+      width: (bits & 0x3fff) + 1,
+      height: ((bits >>> 14) & 0x3fff) + 1,
+    };
+  }
+  if (chunk === "VP8X") {
+    return {
+      width: buffer.readUIntLE(24, 3) + 1,
+      height: buffer.readUIntLE(27, 3) + 1,
+    };
+  }
+  throw new Error(`Unsupported WebP chunk ${JSON.stringify(chunk)}`);
+}
+
 try {
   launch([
     "--headless", "--path", root, "--", "--mode", "server",
@@ -68,16 +96,34 @@ try {
   });
   const image = result.content.find((part) => part.type === "image");
   assert.ok(image && image.type === "image", "graphical MCP frame_action returns an image content block");
-  const png = Buffer.from(image.data, "base64");
-  assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
-  assert.equal(png.readUInt32BE(16), 960);
-  assert.equal(png.readUInt32BE(20), 540);
+  assert.equal(image.mimeType, "image/webp");
+  const standardWebp = Buffer.from(image.data, "base64");
+  assert.deepEqual(webpDimensions(standardWebp), { width: 640, height: 360 });
   assert.match(result.content[0].text, /"personal_state"/);
+
+  const inspectionResult = await mcp.callTool({
+    name: "frame_action",
+    arguments: {
+      throttle: 0,
+      steering: 0,
+      brake: true,
+      cameraTier: "inspection",
+    },
+  });
+  const inspectionImage = inspectionResult.content.find((part) => part.type === "image");
+  assert.ok(inspectionImage && inspectionImage.type === "image");
+  assert.equal(inspectionImage.mimeType, "image/webp");
+  const inspectionWebp = Buffer.from(inspectionImage.data, "base64");
+  assert.deepEqual(webpDimensions(inspectionWebp), { width: 960, height: 540 });
+
   await mcp.close();
   const state = await client.state();
   assert.equal(state.latest_result.frame_id + 1, state.frame_id);
   assert.equal(state.latest_result.balls.length, 180);
-  console.log(`camera: graphical MCP frame_action returned a ${png.length}-byte 960x540 PNG`);
+  console.log(
+    `camera: MCP returned ${standardWebp.length}-byte 640x360 and ` +
+      `${inspectionWebp.length}-byte 960x540 WebP frames`,
+  );
 } catch (error) {
   for (const child of children) {
     const output = child.output();

@@ -25,7 +25,8 @@ export class GameClient {
       }),
     });
     const observation = await this.waitForFrame(frameId);
-    const camera = await this.camera();
+    const cameraTier = input.cameraTier ?? input.camera_tier ?? "standard";
+    const camera = await this.camera(cameraTier);
     return { response, observation, camera };
   }
 
@@ -59,11 +60,12 @@ export class GameClient {
     throw new Error(`Timed out waiting for authoritative frame ${frameId}`);
   }
 
-  async camera() {
-    const response = await fetch(`${this.baseUrl}/camera`);
+  async camera(tier = "standard") {
+    const path = tier === "inspection" ? "/camera/inspection" : "/camera";
+    const response = await fetch(`${this.baseUrl}${path}`);
     if (response.status === 503) return undefined;
     if (!response.ok) {
-      throw new Error(`GET /camera failed (${response.status}): ${await response.text()}`);
+      throw new Error(`GET ${path} failed (${response.status}): ${await response.text()}`);
     }
     return Buffer.from(await response.arrayBuffer()).toString("base64");
   }

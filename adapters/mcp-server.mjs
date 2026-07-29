@@ -19,14 +19,16 @@ server.tool(
     throttle: z.number().min(-1).max(1).default(0),
     steering: z.number().min(-1).max(1).default(0),
     brake: z.boolean().default(false),
+    cameraTier: z.enum(["standard", "inspection"]).default("standard").describe(
+      "standard returns a compact 640x360 view; inspection returns a higher-detail 960x540 view.",
+    ),
   },
   async (input) => {
     const result = await client.act(input);
     const content = [{ type: "text", text: observationText(result) }];
-    if (result.camera) content.push({ type: "image", data: result.camera, mimeType: "image/png" });
+    if (result.camera) content.push({ type: "image", data: result.camera, mimeType: "image/webp" });
     return { content };
   },
 );
 
 await server.connect(new StdioServerTransport());
-

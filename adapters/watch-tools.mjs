@@ -17,6 +17,9 @@ export function createCffGameTools(baseUrl = process.env.CFF_GAME_CONTROL_URL ??
         throttle: z.number().min(-1).max(1).default(0),
         steering: z.number().min(-1).max(1).default(0),
         brake: z.boolean().default(false),
+        cameraTier: z.enum(["standard", "inspection"]).default("standard").describe(
+          "standard returns a compact 640x360 view; inspection returns a higher-detail 960x540 view.",
+        ),
       }),
       execute: (input) => client.act(input),
       toModelOutput: ({ output }) => ({
@@ -24,7 +27,7 @@ export function createCffGameTools(baseUrl = process.env.CFF_GAME_CONTROL_URL ??
         value: [
           { type: "text", text: observationText(output) },
           ...(output.camera
-            ? [{ type: "media", data: output.camera, mediaType: "image/png" }]
+            ? [{ type: "media", data: output.camera, mediaType: "image/webp" }]
             : []),
         ],
       }),
