@@ -1,0 +1,14 @@
+{
+  "game": {
+    "controlUrl": "http://127.0.0.1:38473",
+    "actionTimeoutMs": 45000
+  },
+  "sseStreams": [
+    {
+      "name": "game:frame",
+      "url": "http://127.0.0.1:38473/stream",
+      "subscribed": true,
+      "waking": true
+    }
+  ]
+}

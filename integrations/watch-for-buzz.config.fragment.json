@@ -1,0 +1,23 @@
+{
+  "sseStreams": [
+    {
+      "name": "game:frame",
+      "url": "http://127.0.0.1:38473/stream",
+      "subscribed": true,
+      "waking": true
+    }
+  ],
+  "codex": {
+    "mcpServers": {
+      "cff-ball-pit": {
+        "command": "node",
+        "args": [
+          "/absolute/path/to/cff-ball-pit/adapters/mcp-server.mjs"
+        ],
+        "env": {
+          "CFF_GAME_CONTROL_URL": "http://127.0.0.1:38473"
+        }
+      }
+    }
+  }
+}
