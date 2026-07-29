@@ -98,9 +98,18 @@ try {
   const reader = streamResponse.body.getReader();
   const hello = new TextDecoder().decode((await reader.read()).value);
   assert.match(hello, /"kind":"hello"/);
+  assert.doesNotMatch(hello, /"balls"/);
+  assert.doesNotMatch(hello, /"participants"/);
   streamController.abort();
 
   const before = await state(alphaPort);
+  assert.deepEqual(
+    Object.keys(before).sort(),
+    [
+      "accepting_actions", "connected", "display_name", "frame_id", "latest_result",
+      "participant_id", "personal_state", "protocol_version", "registered", "roster",
+    ].sort(),
+  );
   const frame = before.frame_id;
   const alphaStart = before.personal_state.position;
   const [alphaAction, betaAction] = await Promise.all([
@@ -116,7 +125,14 @@ try {
   }, "authoritative frame resolution");
   assert.ok(resolved.latest_result.simulation_delta >= 0.25);
   assert.ok(resolved.latest_result.simulation_delta <= 2);
-  assert.equal(resolved.latest_result.balls.length, 180);
+  assert.deepEqual(
+    Object.keys(resolved.latest_result).sort(),
+    ["frame_id", "replayed", "simulation_delta", "timed_out"].sort(),
+  );
+  assert.equal(resolved.latest_result.timed_out, false);
+  assert.equal(resolved.latest_result.replayed, false);
+  assert.equal("balls" in resolved.latest_result, false);
+  assert.equal("participants" in resolved.latest_result, false);
   assert.notDeepEqual(resolved.personal_state.position, alphaStart);
   const replay = await act(alphaPort, { frame_id: frame, throttle: -1, steering: -1, brake: false });
   assert.equal(replay.response.status, 202);
@@ -144,7 +160,7 @@ try {
     return value.latest_result?.frame_id >= timeoutFrame ? value : undefined;
   }, "timeout fallback frame");
   assert.equal(timeoutResult.latest_result.frame_id, timeoutFrame);
-  assert.notDeepEqual(timeoutResult.latest_result.balls, resolved.latest_result.balls);
+  assert.equal(timeoutResult.latest_result.timed_out, true);
 
   const mcp = new Client({ name: "smoke", version: "1.0.0" });
   const mcpTransport = new StdioClientTransport({

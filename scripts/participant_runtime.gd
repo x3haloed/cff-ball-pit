@@ -9,6 +9,7 @@ var display_name := "Participant"
 var current_frame_id := 0
 var current_roster := []
 var latest_result := {}
+var latest_result_metadata := {}
 var latest_personal_state := {}
 var accepting_actions := false
 var submitted_frame_id := 0
@@ -79,7 +80,6 @@ func submit_action(frame: int, action: Dictionary) -> Dictionary:
 
 func semantic_state() -> Dictionary:
 	return {
-		"ok": true,
 		"protocol_version": FrameContract.PROTOCOL_VERSION,
 		"participant_id": participant_id,
 		"display_name": display_name,
@@ -87,11 +87,9 @@ func semantic_state() -> Dictionary:
 		"registered": registered,
 		"frame_id": current_frame_id,
 		"accepting_actions": accepting_actions,
-		"submitted_frame_id": submitted_frame_id,
 		"roster": current_roster,
 		"personal_state": latest_personal_state,
-		"latest_result": latest_result,
-		"control_port": control.port if control != null else 0,
+		"latest_result": latest_result_metadata,
 	}
 
 
@@ -242,6 +240,12 @@ func frame_resolved(result: Dictionary, for_participant_id: String, timed_out: b
 func _accept_result(result: Dictionary, timed_out: bool, replayed: bool) -> void:
 	accepting_actions = false
 	latest_result = result
+	latest_result_metadata = {
+		"frame_id": int(result.get("frame_id", 0)),
+		"simulation_delta": float(result.get("simulation_delta", 0.0)),
+		"timed_out": timed_out,
+		"replayed": replayed,
+	}
 	_apply_snapshot(result)
 	control.emit_semantic("frame_observation", {
 		"summary": "Frame %d resolved after %.2f simulated seconds." % [

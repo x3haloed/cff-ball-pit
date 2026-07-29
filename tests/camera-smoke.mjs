@@ -119,7 +119,12 @@ try {
   await mcp.close();
   const state = await client.state();
   assert.equal(state.latest_result.frame_id + 1, state.frame_id);
-  assert.equal(state.latest_result.balls.length, 180);
+  assert.deepEqual(
+    Object.keys(state.latest_result).sort(),
+    ["frame_id", "replayed", "simulation_delta", "timed_out"].sort(),
+  );
+  assert.equal("balls" in state.latest_result, false);
+  assert.equal("participants" in state.latest_result, false);
   console.log(
     `camera: MCP returned ${standardWebp.length}-byte 640x360 and ` +
       `${inspectionWebp.length}-byte 960x540 WebP frames`,

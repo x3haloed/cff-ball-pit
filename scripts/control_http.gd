@@ -166,7 +166,6 @@ func _start_sse(peer: StreamPeerTCP) -> void:
 		"kind": "hello",
 		"at_unix_ms": Time.get_unix_time_from_system() * 1000.0,
 		"details": {
-			"summary": "CFF Ball Pit stream opened for %s." % participant.display_name,
 			"state": participant.semantic_state(),
 		},
 	}
